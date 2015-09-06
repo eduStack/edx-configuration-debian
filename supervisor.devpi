@@ -23,8 +23,8 @@
 
 . /lib/lsb/init-functions
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/supervisord
+PATH=/edx/app/devpi/venvs/supervisor/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/edx/app/devpi/venvs/supervisor/bin/supervisord
 NAME=supervisord.devpi
 DESC=supervisor.devpi
 
