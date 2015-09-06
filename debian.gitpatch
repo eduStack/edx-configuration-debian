@@ -48,6 +48,21 @@ index 3b1bae3..482f6c1 100644
 -  
 \ No newline at end of file
 +  
+diff --git a/playbooks/roles/edx_service/tasks/main.yml b/playbooks/roles/edx_service/tasks/main.yml
+index 75efde9..c5d0543 100644
+--- a/playbooks/roles/edx_service/tasks/main.yml
++++ b/playbooks/roles/edx_service/tasks/main.yml
+@@ -88,8 +88,8 @@
+   file: >
+     path="{{ item }}"
+     state=directory
+-    owner="syslog"
+-    group="syslog"
++    owner="root"
++    group="root"
+   with_items:
+     - "{{ COMMON_LOG_DIR }}/{{ edx_service_name }}"
+ 
 diff --git a/playbooks/roles/edxapp/defaults/main.yml b/playbooks/roles/edxapp/defaults/main.yml
 index ecfb377..a4be050 100644
 --- a/playbooks/roles/edxapp/defaults/main.yml
