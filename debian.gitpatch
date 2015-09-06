@@ -1,0 +1,282 @@
+diff --git a/playbooks/roles/common/defaults/main.yml b/playbooks/roles/common/defaults/main.yml
+index ce48f9f..886258a 100644
+--- a/playbooks/roles/common/defaults/main.yml
++++ b/playbooks/roles/common/defaults/main.yml
+@@ -101,9 +101,7 @@ common_pip_pkgs:
+ 
+ common_web_user: www-data
+ common_web_group: www-data
+-common_log_user: syslog
+-
+-common_git_ppa: "ppa:git-core/ppa"
++common_log_user: root
+ 
+ # Skip supervisor tasks
+ # When set to true this flag will allow you to install everything but keep
+diff --git a/playbooks/roles/common/tasks/main.yml b/playbooks/roles/common/tasks/main.yml
+index 3b1bae3..482f6c1 100644
+--- a/playbooks/roles/common/tasks/main.yml
++++ b/playbooks/roles/common/tasks/main.yml
+@@ -25,12 +25,6 @@
+   stat: path=/home/vagrant
+   register: vagrant_home_dir
+ 
+-# Ensure that we get a current version of Git
+-# GitHub requires version 1.7.10 or later
+-# https://help.github.com/articles/https-cloning-errors
+-- name: Add git apt repository
+-  apt_repository: repo="{{ common_git_ppa }}"
+-
+ - name: Install role-independent useful system packages
+   # do this before log dir setup; rsyslog package guarantees syslog user present
+   apt: >
+@@ -39,8 +33,8 @@
+ 
+ - name: Create common log directory
+   file: >
+-    path={{ COMMON_LOG_DIR }} state=directory owner=syslog
+-    group=syslog mode=0755
++    path={{ COMMON_LOG_DIR }} state=directory owner=root
++    group=root mode=0755
+ 
+ - name: upload sudo config for key forwarding as root
+   copy: >
+@@ -118,4 +112,4 @@
+     dest=/etc/ssh/sshd_config
+     src=sshd_config.j2 mode=0644 owner=root group=root
+   notify: restart ssh
+-  
+\ No newline at end of file
++  
+diff --git a/playbooks/roles/edxapp/defaults/main.yml b/playbooks/roles/edxapp/defaults/main.yml
+index ecfb377..a4be050 100644
+--- a/playbooks/roles/edxapp/defaults/main.yml
++++ b/playbooks/roles/edxapp/defaults/main.yml
+@@ -978,8 +978,6 @@ sandbox_base_requirements:  "{{ edxapp_code_dir }}/requirements/edx-sandbox/base
+ sandbox_local_requirements: "{{ edxapp_code_dir }}/requirements/edx-sandbox/local.txt"
+ sandbox_post_requirements:  "{{ edxapp_code_dir }}/requirements/edx-sandbox/post.txt"
+ 
+-edxapp_chrislea_ppa: "ppa:chris-lea/node.js"
+-
+ edxapp_debian_pkgs:
+   # for compiling the virtualenv
+   # (only needed if wheel files aren't available)
+diff --git a/playbooks/roles/edxapp/tasks/main.yml b/playbooks/roles/edxapp/tasks/main.yml
+index 2e3f601..138edd0 100644
+--- a/playbooks/roles/edxapp/tasks/main.yml
++++ b/playbooks/roles/edxapp/tasks/main.yml
+@@ -54,10 +54,6 @@
+     - "{{ edxapp_upload_dir }}"
+     - "{{ edxapp_media_dir }}"
+ 
+-# adding chris-lea nodejs repo
+-- name: add ppas for current versions of nodejs
+-  apt_repository: repo="{{ edxapp_chrislea_ppa }}"
+-
+ - name: install system packages on which LMS and CMS rely
+   apt: pkg={{','.join(edxapp_debian_pkgs)}} state=present update_cache=yes
+ 
+diff --git a/playbooks/roles/edxapp/tasks/python_sandbox_env.yml b/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
+index 1793cb5..17d0cfb 100644
+--- a/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
++++ b/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
+@@ -2,11 +2,11 @@
+ # MITx 6.341x course.
+ # TODO: Switch to using alternatives module in 1.6
+ - name: code sandbox | Use libblas for 3gf
+-  command: update-alternatives --set libblas.so.3gf /usr/lib/libblas/libblas.so.3gf
++  command: update-alternatives --set libblas.so.3 /usr/lib/libblas/libblas.so.3
+ 
+ # TODO: Switch to using alternatives module in 1.6
+ - name: code sandbox | Use liblapac for 3gf
+-  command: update-alternatives --set liblapack.so.3gf /usr/lib/lapack/liblapack.so.3gf
++  command: update-alternatives --set liblapack.so.3 /usr/lib/lapack/liblapack.so.3
+ 
+ - name: code sandbox | Create edxapp sandbox user
+   user: name={{ edxapp_sandbox_user }} shell=/bin/false home={{ edxapp_sandbox_venv_dir }}
+diff --git a/playbooks/roles/edxapp_common/defaults/main.yml b/playbooks/roles/edxapp_common/defaults/main.yml
+index 1d74091..9724624 100644
+--- a/playbooks/roles/edxapp_common/defaults/main.yml
++++ b/playbooks/roles/edxapp_common/defaults/main.yml
+@@ -20,7 +20,7 @@ edxapp_common_debian_pkgs:
+     - gettext
+     # Pillow (PIL Fork) Dependencies
+     # Needed by the CMS to manipulate images.
+-    - libjpeg8-dev
++    - libjpeg-dev
+     - libpng12-dev
+     # python-saml dependencies: (required for Shibboleth in third_party_auth)
+     - libxmlsec1-dev
+diff --git a/playbooks/roles/jenkins_admin/defaults/main.yml b/playbooks/roles/jenkins_admin/defaults/main.yml
+index 5074bf9..75e3e06 100644
+--- a/playbooks/roles/jenkins_admin/defaults/main.yml
++++ b/playbooks/roles/jenkins_admin/defaults/main.yml
+@@ -27,8 +27,6 @@ JENKINS_ADMIN_AWS_CREDENTIALS: !!null
+ 
+ jenkins_admin_role_name: jenkins_admin
+ 
+-# repo for nodejs
+-jenkins_chrislea_ppa: "ppa:chris-lea/node.js"
+ #
+ # OS packages
+ #
+@@ -70,7 +68,7 @@ jenkins_admin_debian_pkgs:
+   - gettext
+   # Pillow (PIL Fork) Dependencies
+   # Needed by the CMS to manipulate images.
+-  - libjpeg8-dev
++  - libjpeg-dev
+   - libpng12-dev
+   # for status.edx.org
+   - ruby
+diff --git a/playbooks/roles/jenkins_admin/tasks/main.yml b/playbooks/roles/jenkins_admin/tasks/main.yml
+index 63e884d..34f676d 100644
+--- a/playbooks/roles/jenkins_admin/tasks/main.yml
++++ b/playbooks/roles/jenkins_admin/tasks/main.yml
+@@ -115,10 +115,6 @@
+     mode=0644
+   with_items: jenkins_admin_jobs
+ 
+-# adding chris-lea nodejs repo
+-- name: add ppas for current versions of nodejs
+-  apt_repository: repo="{{ jenkins_chrislea_ppa }}"
+-
+ - name: install system packages for edxapp virtualenvs
+   apt: pkg={{','.join(jenkins_admin_debian_pkgs)}} state=present update_cache=yes
+ 
+diff --git a/playbooks/roles/jenkins_worker/defaults/main.yml b/playbooks/roles/jenkins_worker/defaults/main.yml
+index 20d623d..20e204e 100644
+--- a/playbooks/roles/jenkins_worker/defaults/main.yml
++++ b/playbooks/roles/jenkins_worker/defaults/main.yml
+@@ -3,9 +3,6 @@ jenkins_user: "jenkins"
+ jenkins_group: "jenkins"
+ jenkins_home: /home/jenkins
+ 
+-# repo for nodejs
+-jenkins_chrislea_ppa: "ppa:chris-lea/node.js"
+-
+ # System packages
+ jenkins_debian_pkgs:
+     - nodejs
+diff --git a/playbooks/roles/jenkins_worker/tasks/system.yml b/playbooks/roles/jenkins_worker/tasks/system.yml
+index 33dd883..36c55e2 100644
+--- a/playbooks/roles/jenkins_worker/tasks/system.yml
++++ b/playbooks/roles/jenkins_worker/tasks/system.yml
+@@ -26,10 +26,6 @@
+     owner={{ jenkins_user }} group={{ jenkins_group }} mode=400
+   ignore_errors: yes
+ 
+-# adding chris-lea nodejs repo
+-- name: add ppas for current versions of nodejs
+-  apt_repository: repo="{{ jenkins_chrislea_ppa }}"
+-
+ - name: Install system packages
+   apt: pkg={{','.join(jenkins_debian_pkgs)}}
+        state=present update_cache=yes
+diff --git a/playbooks/roles/mongo/defaults/main.yml b/playbooks/roles/mongo/defaults/main.yml
+index a2bd083..14bad03 100644
+--- a/playbooks/roles/mongo/defaults/main.yml
++++ b/playbooks/roles/mongo/defaults/main.yml
+@@ -12,7 +12,7 @@ mongo_log_dir: "{{ COMMON_LOG_DIR }}/mongo"
+ mongo_user: mongodb
+ 
+ MONGODB_APT_KEY: "http://docs.mongodb.org/10gen-gpg-key.asc"
+-MONGODB_REPO: "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"
++MONGODB_REPO: "deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen"
+ 
+ # Vars Meant to be overridden
+ MONGO_ADMIN_USER: 'admin'
+diff --git a/playbooks/roles/mongo_3_0/defaults/main.yml b/playbooks/roles/mongo_3_0/defaults/main.yml
+index 7d70b3a..9b721bc 100644
+--- a/playbooks/roles/mongo_3_0/defaults/main.yml
++++ b/playbooks/roles/mongo_3_0/defaults/main.yml
+@@ -16,7 +16,7 @@ mongo_log_dir: "{{ COMMON_LOG_DIR }}/mongo"
+ mongo_journal_dir: "{{ COMMON_DATA_DIR }}/mongo/mongodb/journal"
+ mongo_user: mongodb
+ 
+-MONGODB_REPO: "deb http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.0 multiverse"
++MONGODB_REPO: "deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.0 main"
+ MONGODB_APT_KEY: "7F0CEB10"
+ MONGODB_APT_KEYSERVER: "keyserver.ubuntu.com"
+ 
+diff --git a/playbooks/roles/notifier/tasks/main.yml b/playbooks/roles/notifier/tasks/main.yml
+index a7eecee..ccb9c66 100644
+--- a/playbooks/roles/notifier/tasks/main.yml
++++ b/playbooks/roles/notifier/tasks/main.yml
+@@ -100,8 +100,8 @@
+   file: >
+     path="{{ item }}"
+     state=directory
+-    owner="syslog"
+-    group="syslog"
++    owner="root"
++    group="root"
+   with_items:
+     - "{{ COMMON_LOG_DIR }}/notifier"
+ 
+diff --git a/playbooks/roles/redis/defaults/main.yml b/playbooks/roles/redis/defaults/main.yml
+index 761ee10..60beade 100644
+--- a/playbooks/roles/redis/defaults/main.yml
++++ b/playbooks/roles/redis/defaults/main.yml
+@@ -19,7 +19,6 @@ REDIS_MAX_MEMORY_POLICY: "noeviction"
+ # vars are namespace with the module name.
+ #
+ redis_role_name: redis
+-redis_ppa: "ppa:chris-lea/redis-server"
+ 
+ redis_user: redis
+ redis_group: redis
+diff --git a/playbooks/roles/redis/tasks/main.yml b/playbooks/roles/redis/tasks/main.yml
+index 9700afd..ce4be29 100644
+--- a/playbooks/roles/redis/tasks/main.yml
++++ b/playbooks/roles/redis/tasks/main.yml
+@@ -21,9 +21,6 @@
+ #
+ #
+ 
+-- name: add the redis ppa
+-  apt_repository: repo="{{ redis_ppa }}"
+-
+ - name: install redis system packages
+   apt: pkg={{ item }} install_recommends=yes state=present
+   with_items: redis_debian_pkgs
+diff --git a/playbooks/roles/sitespeedio/defaults/main.yml b/playbooks/roles/sitespeedio/defaults/main.yml
+index dcc9e49..23bacaa 100644
+--- a/playbooks/roles/sitespeedio/defaults/main.yml
++++ b/playbooks/roles/sitespeedio/defaults/main.yml
+@@ -19,7 +19,6 @@ sitespeedio_role_name: sitespeedio
+ #
+ # OS packages
+ #
+-sitespeedio_chrislea_ppa: "ppa:chris-lea/node.js"
+ 
+ sitespeedio_debian_pkgs: 
+   - firefox
+diff --git a/playbooks/roles/sitespeedio/tasks/main.yml b/playbooks/roles/sitespeedio/tasks/main.yml
+index 401b492..6c4efa9 100644
+--- a/playbooks/roles/sitespeedio/tasks/main.yml
++++ b/playbooks/roles/sitespeedio/tasks/main.yml
+@@ -24,10 +24,6 @@
+ #    - sitespeedio
+ #
+ 
+-# adding chris-lea nodejs repo
+-- name: add ppas for current versions of nodejs
+-  apt_repository: "repo={{ sitespeedio_chrislea_ppa }}"
+-
+ # Install Sitespeed Dependencies
+ - name: install sitespeed.io specific system packages
+   apt: pkg={{','.join(sitespeedio_debian_pkgs)}} state=present
+diff --git a/playbooks/roles/supervisor/defaults/main.yml b/playbooks/roles/supervisor/defaults/main.yml
+index 2aad871..8e03281 100644
+--- a/playbooks/roles/supervisor/defaults/main.yml
++++ b/playbooks/roles/supervisor/defaults/main.yml
+@@ -39,7 +39,7 @@ supervisor_log_dir: "{{ COMMON_LOG_DIR }}/supervisor"
+ supervisor_cfg: "{{ supervisor_app_dir }}/supervisord.conf"
+ # upstart service name and user
+ supervisor_service: supervisor
+-supervisor_service_user: "{{ common_web_user }}"
++supervisor_service_user: root
+ 
+ supervisor_pip_pkgs:
+   - boto=="{{ common_boto_version }}"

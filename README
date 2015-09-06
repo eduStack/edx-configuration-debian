@@ -1,0 +1,6 @@
+Scripts to make edx working on Debian
+
+- Add `apparmor=1 security=apparmor` to grub command line
+- Copy supervisor* to /etc/init.d/
+- Install Node.js 0.12 with `curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -` then `sudo apt-get install nodejs`
+- Apply debian.gitpatch with `git apply path/to/debian.gitpatch` in edx configuration folder
