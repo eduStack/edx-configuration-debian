@@ -1,7 +1,7 @@
 Scripts to make edx working on Debian
 
 - Install apparmor : `sudo apt-get install apparmor -y`
-- Install curl && python requirements : `sudo apt-get install curl python-pip python-virtualenv -y`
+- Install curl && python requirements : `sudo apt-get install curl python-dev python-pip python-virtualenv -y`
 - Add `apparmor=1 security=apparmor` to grub command line
 - Copy supervisor* to /etc/init.d/
 - Install Node.js 0.12 with `curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -` then `sudo apt-get install nodejs -y`
