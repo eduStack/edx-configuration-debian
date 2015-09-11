@@ -1,0 +1,237 @@
+diff --git a/playbooks/roles/datadog/defaults/main.yml b/playbooks/roles/datadog/defaults/main.yml
+index 37be0bb..65dc261 100644
+--- a/playbooks/roles/datadog/defaults/main.yml
++++ b/playbooks/roles/datadog/defaults/main.yml
+@@ -5,7 +5,6 @@ datadog_agent_version: '1:5.1.1-546'
+ 
+ datadog_apt_key: "0x226AE980C7A7DA52"
+ datadog_debian_pkgs:
+-  - apparmor-utils
+   - build-essential
+   - curl
+   - g++
+diff --git a/playbooks/roles/edxapp/defaults/main.yml b/playbooks/roles/edxapp/defaults/main.yml
+index a9a0c50..889e54b 100644
+--- a/playbooks/roles/edxapp/defaults/main.yml
++++ b/playbooks/roles/edxapp/defaults/main.yml
+@@ -568,9 +568,6 @@ edxapp_workers: "{{ EDXAPP_CELERY_WORKERS }}"
+ edxapp_sandbox_venv_dir:  '{{ edxapp_venvs_dir }}/edxapp-sandbox'
+ edxapp_sandbox_user: 'sandbox'  # I think something about the codejail requires hardcoding this to sandbox:sandbox
+ 
+-# apparmor command
+-edxapp_aa_command: "{% if EDXAPP_SANDBOX_ENFORCE %}aa-enforce{% else %}aa-complain{% endif %}"
+-
+ # all edxapp requirements files
+ edxapp_requirements_with_github_urls:
+   - "{{ pre_requirements_file }}"
+@@ -995,8 +992,6 @@ edxapp_debian_pkgs:
+   # libopenblas-base, it will cause
+   # problems for numpy
+   - g++
+-  # apparmor
+-  - apparmor-utils
+   # misc
+   - curl
+   - ipython
+diff --git a/playbooks/roles/edxapp/tasks/deploy.yml b/playbooks/roles/edxapp/tasks/deploy.yml
+index 42df176..393bb79 100644
+--- a/playbooks/roles/edxapp/tasks/deploy.yml
++++ b/playbooks/roles/edxapp/tasks/deploy.yml
+@@ -243,14 +243,6 @@
+ 
+ # The next few tasks set up the python code sandbox
+ 
+-# need to disable this profile, otherwise the pip inside the sandbox venv has no permissions
+-# to install anything
+-- name: code sandbox | put sandbox apparmor profile in complain mode
+-  command: /usr/sbin/aa-complain /etc/apparmor.d/code.sandbox
+-  when: EDXAPP_PYTHON_SANDBOX
+-  tags:
+-  - edxapp-sandbox
+-
+ - name: code sandbox | Install base sandbox requirements and create sandbox virtualenv
+   pip: >
+     requirements="{{ sandbox_base_requirements }}"
+@@ -276,12 +268,6 @@
+   tags:
+   - edxapp-sandbox
+ 
+-- name: code sandbox | put code sandbox into aa-enforce or aa-complain mode, depending on EDXAPP_SANDBOX_ENFORCE
+-  command: /usr/sbin/{{ edxapp_aa_command }} /etc/apparmor.d/code.sandbox
+-  when: EDXAPP_PYTHON_SANDBOX
+-  tags:
+-  - edxapp-sandbox
+-
+ - name: compiling all py files in the edx-platform repo
+   shell: "{{ edxapp_venv_bin }}/python -m compileall -x .git/.* {{ edxapp_code_dir }}"
+   sudo_user: "{{ edxapp_user }}"
+diff --git a/playbooks/roles/edxapp/tasks/python_sandbox_env.yml b/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
+index 17d0cfb..8257347 100644
+--- a/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
++++ b/playbooks/roles/edxapp/tasks/python_sandbox_env.yml
+@@ -13,34 +13,7 @@
+   tags:
+   - edxapp-sandbox
+ 
+-- name: code sandbox | Install apparmor utils system pkg
+-  apt: pkg=apparmor-utils state=present
+-  tags:
+-  - edxapp-sandbox
+-
+-- name: code sandbox | write out apparmor code sandbox config
+-  template: src=code.sandbox.j2 dest=/etc/apparmor.d/code.sandbox mode=0644 owner=root group=root
+-  tags:
+-  - edxapp-sandbox
+-
+ - name: code sandbox | write out sandbox user sudoers config
+   template: src=95-sandbox-sudoer.j2 dest=/etc/sudoers.d/95-{{ edxapp_sandbox_user }} mode=0440 owner=root group=root validate='visudo -c -f %s'
+   tags:
+   - edxapp-sandbox
+-
+-# we boostrap and enable the apparmor service here.  in deploy.yml we disable, deploy, then re-enable
+-# so we need to enable it in main.yml
+-- name: code sandbox | start apparmor service
+-  service: name=apparmor state=started
+-  tags:
+-  - edxapp-sandbox
+-
+-- name: code sandbox | (bootstrap) load code sandbox profile
+-  command: apparmor_parser -r /etc/apparmor.d/code.sandbox
+-  tags:
+-  - edxapp-sandbox
+-
+-- name: code sandbox | (bootstrap) put code sandbox into aa-enforce or aa-complain mode depending on EDXAPP_SANDBOX_ENFORCE
+-  command: /usr/sbin/{{ edxapp_aa_command }} /etc/apparmor.d/code.sandbox
+-  tags:
+-  - edxapp-sandbox
+diff --git a/playbooks/roles/jenkins_admin/defaults/main.yml b/playbooks/roles/jenkins_admin/defaults/main.yml
+index fe6736f..8e57538 100644
+--- a/playbooks/roles/jenkins_admin/defaults/main.yml
++++ b/playbooks/roles/jenkins_admin/defaults/main.yml
+@@ -55,8 +55,6 @@ jenkins_admin_debian_pkgs:
+   - g++
+   - libxml2-dev
+   - libxslt1-dev
+-  # apparmor
+-  - apparmor-utils
+   # misc
+   - curl
+   - ipython
+diff --git a/playbooks/roles/notifier/defaults/main.yml b/playbooks/roles/notifier/defaults/main.yml
+index 0eb0577..b08ee47 100644
+--- a/playbooks/roles/notifier/defaults/main.yml
++++ b/playbooks/roles/notifier/defaults/main.yml
+@@ -63,7 +63,6 @@ notifier_app_dir: "{{ COMMON_APP_DIR }}/notifier"
+ notifier_user: "notifier"
+ 
+ notifier_debian_pkgs:
+-  - apparmor-utils
+   - build-essential
+   - curl
+   - g++
+diff --git a/playbooks/roles/xqueue/defaults/main.yml b/playbooks/roles/xqueue/defaults/main.yml
+index 7038007..9c67b81 100644
+--- a/playbooks/roles/xqueue/defaults/main.yml
++++ b/playbooks/roles/xqueue/defaults/main.yml
+@@ -99,8 +99,6 @@ xqueue_debian_pkgs:
+   - graphviz-dev
+   - graphviz
+   - libmysqlclient-dev
+-  # apparmor
+-  - apparmor-utils
+   # misc
+   - curl
+   - ipython
+diff --git a/playbooks/roles/xqwatcher/defaults/main.yml b/playbooks/roles/xqwatcher/defaults/main.yml
+index 20922f5..8a8fce1 100644
+--- a/playbooks/roles/xqwatcher/defaults/main.yml
++++ b/playbooks/roles/xqwatcher/defaults/main.yml
+@@ -113,7 +113,6 @@ xqwatcher_supervisor_available_dir: "{{ xqwatcher_supervisor_app_dir }}/conf.ava
+ # OS packages
+ #
+ 
+-xqwatcher_debian_pkgs:
+-  - apparmor-utils
++xqwatcher_debian_pkgs: []
+ 
+ xqwatcher_redhat_pkgs: []
+diff --git a/playbooks/roles/xqwatcher/tasks/code_jail.yml b/playbooks/roles/xqwatcher/tasks/code_jail.yml
+index b59d8ef..1ba2076 100644
+--- a/playbooks/roles/xqwatcher/tasks/code_jail.yml
++++ b/playbooks/roles/xqwatcher/tasks/code_jail.yml
+@@ -9,15 +9,6 @@
+     home="/dev/null"
+   with_items: XQWATCHER_COURSES
+ 
+-#
+-# Need to disable aa to update the virutalenv
+-- name: write out apparmor config
+-  template: >
+-    src=etc/apparmor.d/code.jail.j2
+-    dest="/etc/apparmor.d/code.jail.{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}"
+-    mode=0644 owner=root group=root
+-  with_items: XQWATCHER_COURSES
+-
+ - name: write out sudoers for watcher
+   template: >
+     src=etc/sudoers.d/95-xqwatcher.j2
+@@ -25,10 +16,6 @@
+     mode=0440 owner=root group=root validate='visudo -c -f %s'
+   with_items: XQWATCHER_COURSES
+ 
+-- name: put code jail into aa-complain
+-  command: /usr/sbin/aa-complain "/etc/apparmor.d/code.jail.{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}"
+-  with_items: XQWATCHER_COURSES
+-
+ - name: create jail virtualenv
+   shell: >
+     /usr/local/bin/virtualenv --no-site-packages {{ xqwatcher_app_dir }}/venvs/{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}
+@@ -53,24 +40,3 @@
+   shell: >
+     chown -R {{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.user }} {{ xqwatcher_app_dir }}/venvs/{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}
+   with_items: XQWATCHER_COURSES
+-
+-- name: start apparmor service
+-  service: name=apparmor state=started
+-
+-- name: load code sandbox profile
+-  command: apparmor_parser -r "/etc/apparmor.d/code.jail.{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}"
+-  with_items: XQWATCHER_COURSES
+-
+-#
+-# Leaves aa in either complain or enforce depending upon the value of the
+-# CODE_JAIL_COMPLAIN var.  Complain mode should never be run in an
+-# environment where untrusted users can submit code
+-- name: put code jail into aa-complain
+-  command: /usr/sbin/aa-complain "/etc/apparmor.d/code.jail.{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}"
+-  when: CODE_JAIL_COMPLAIN|bool
+-  with_items: XQWATCHER_COURSES
+-
+-- name: put code sandbox into aa-enforce
+-  command: /usr/sbin/aa-enforce "/etc/apparmor.d/code.jail.{{ item.QUEUE_CONFIG.HANDLERS[0].CODEJAIL.name }}"
+-  when: not CODE_JAIL_COMPLAIN|bool
+-  with_items: XQWATCHER_COURSES
+diff --git a/playbooks/roles/xserver/defaults/main.yml b/playbooks/roles/xserver/defaults/main.yml
+index d2b082e..1daf7cf 100644
+--- a/playbooks/roles/xserver/defaults/main.yml
++++ b/playbooks/roles/xserver/defaults/main.yml
+@@ -63,4 +63,3 @@ xserver_debian_pkgs:
+   - libxml2-utils
+   - libxslt1-dev
+   - python-dev
+-  - apparmor-utils
+diff --git a/playbooks/roles/xserver/tasks/main.yml b/playbooks/roles/xserver/tasks/main.yml
+index 6cd2dd1..1b72cb4 100644
+--- a/playbooks/roles/xserver/tasks/main.yml
++++ b/playbooks/roles/xserver/tasks/main.yml
+@@ -61,10 +61,4 @@
+   apt: pkg={{ item }} state=present
+   with_items: xserver_debian_pkgs
+ 
+-- name: load python-sandbox apparmor profile
+-  template: src={{ item }} dest=/etc/apparmor.d/edx_apparmor_sandbox
+-  first_available_file:
+-  - "{{ secure_dir }}/files/edx_apparmor_sandbox.j2"
+-  - "usr.bin.python-sandbox.j2"
+-
+ - include: deploy.yml tags=deploy
