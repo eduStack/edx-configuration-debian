@@ -1,5 +1,6 @@
 Scripts to make edx working on Debian
 
+- Don't forget to have openssh-server installed
 - Install apparmor : `sudo apt-get install apparmor -y`
 - Install curl && python requirements : `sudo apt-get install curl python-dev python-pip python-virtualenv -y`
 - Add `apparmor=1 security=apparmor` to grub command line
