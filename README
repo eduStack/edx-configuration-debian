@@ -1,6 +1,16 @@
 Scripts to make edx working on Debian
 
+- Don't forget to have openssh-server installed
+- Install apparmor : `sudo apt-get install apparmor -y`
+- Install curl && python requirements : `sudo apt-get install curl python-dev python-pip python-virtualenv -y`
 - Add `apparmor=1 security=apparmor` to grub command line
 - Copy supervisor* to /etc/init.d/
-- Install Node.js 0.12 with `curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -` then `sudo apt-get install nodejs`
+- Install Node.js 0.12 with `curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -` then `sudo apt-get install nodejs -y`
 - Apply debian.gitpatch with `git apply path/to/debian.gitpatch` in edx configuration folder
+- Create missing folders && files :
+  - `mkdir -p /etc/update-motd.d`
+  - `touch /etc/update-motd.d/10-help-text`
+  - `touch /etc/update-motd.d/51-cloudguest`
+  - `touch /etc/update-motd.d/91-release-upgrade`
+  - `mkdir -p /usr/share/landscape`
+  - `touch /usr/share/landscape/landscape-sysinfo.wrapper`
