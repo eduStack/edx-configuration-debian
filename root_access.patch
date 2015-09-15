@@ -1,0 +1,8 @@
+--- /etc/passwd	2015-09-15 13:52:38.498918825 +0200
++++ passwd	2015-09-15 08:55:22.647703539 +0200
+@@ -1,4 +1,4 @@
+-root:x:0:0:root:/root:/bin/false
++root:x:0:0:root:/root:/bin/bash
+ daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+ bin:x:2:2:bin:/bin:/usr/sbin/nologin
+ sys:x:3:3:sys:/dev:/usr/sbin/nologin
