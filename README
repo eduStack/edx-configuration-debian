@@ -14,3 +14,4 @@ Scripts to make edx working on Debian
   - `touch /etc/update-motd.d/91-release-upgrade`
   - `mkdir -p /usr/share/landscape`
   - `touch /usr/share/landscape/landscape-sysinfo.wrapper`
+- At the end of installation, apply root_access.patch on /etc
